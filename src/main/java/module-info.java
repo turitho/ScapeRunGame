@@ -4,4 +4,7 @@ module com.mycompany.scaperuntlp {
 
     opens com.mycompany.scaperuntlp to javafx.fxml;
     exports com.mycompany.scaperuntlp;
+    
+    opens com.mycompany.scaperuntlp.controller to javafx.fxml;
+    exports com.mycompany.scaperuntlp.controller;
 }

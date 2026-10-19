@@ -1,5 +1,6 @@
-package com.mycompany.scaperuntlp;
+package com.mycompany.scaperuntlp.controller;
 
+import com.mycompany.scaperuntlp.App;
 import java.io.IOException;
 import javafx.fxml.FXML;
 
