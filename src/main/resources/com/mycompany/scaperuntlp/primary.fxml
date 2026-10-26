@@ -1,16 +1,92 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.layout.VBox?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.Button?>
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.effect.DropShadow?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.paint.Color?>
+<?import javafx.scene.text.Font?>
 
-<VBox alignment="CENTER" spacing="20.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.mycompany.scaperuntlp.PrimaryController">
+<StackPane fx:id="rootPane" prefHeight="720.0" prefWidth="1280.0" 
+           style="-fx-background-color: linear-gradient(to bottom, #0a0000, #1c0202, #050505);" 
+           stylesheets="@style.css" 
+           xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" 
+           fx:controller="com.mycompany.scaperuntlp.controller.PrimaryController">
    <children>
-      <Label text="Primary View" />
-      <Button fx:id="primaryButton" text="Switch to Secondary View" onAction="#switchToSecondary"/>
+      <VBox alignment="TOP_CENTER" spacing="50.0">
+         <padding>
+            <Insets top="60.0" />
+         </padding>
+         <children>
+            <!-- Título e Subtítulo Centralizados -->
+            <VBox alignment="CENTER" spacing="8.0">
+               <children>
+                  <Label text="ESCAPE RUN" textFill="#b30000">
+                     <font>
+                        <Font name="Georgia Bold" size="76.0" />
+                     </font>
+                     <effect>
+                        <DropShadow radius="30.0" spread="0.6">
+                           <color>
+                              <Color red="1.0" green="0.1" blue="0.1" />
+                           </color>
+                        </DropShadow>
+                     </effect>
+                  </Label>
+                  <Label text="P O D E R Á S   E S C A P A R ?" textFill="#ffffff">
+                     <font>
+                        <Font name="Courier New Bold" size="18.0" />
+                     </font>
+                     <effect>
+                        <DropShadow radius="10.0" spread="0.3">
+                           <color>
+                              <Color red="0.0" green="0.0" blue="0.0" />
+                           </color>
+                        </DropShadow>
+                     </effect>
+                  </Label>
+               </children>
+            </VBox>
+
+            <!-- Menu de Opções com Fonte Reduzida (18px) -->
+            <VBox alignment="CENTER_LEFT" spacing="20.0">
+               <padding>
+                  <Insets left="100.0" top="30.0" />
+               </padding>
+               <children>
+                  <Label fx:id="lblPlay" onMouseClicked="#handlePlay" styleClass="granny-text-button" text="J O G A R" textFill="#ffffff">
+                     <font>
+                        <Font name="Georgia Bold" size="18.0" />
+                     </font>
+                  </Label>
+                  
+                  <Label fx:id="lblDifficulty" onMouseClicked="#handleDifficulty" styleClass="granny-text-button" text="DIFICULDADE: NORMAL" textFill="#ffffff">
+                     <font>
+                        <Font name="Georgia Bold" size="18.0" />
+                     </font>
+                  </Label>
+                  
+                  <Label fx:id="lblOptions" onMouseClicked="#handleOptions" styleClass="granny-text-button" text="OPÇÕES" textFill="#ffffff">
+                     <font>
+                        <Font name="Georgia Bold" size="18.0" />
+                     </font>
+                  </Label>
+                  
+                  <Label fx:id="lblCredits" onMouseClicked="#handleCredits" styleClass="granny-text-button" text="CRÉDITOS" textFill="#ffffff">
+                     <font>
+                        <Font name="Georgia Bold" size="18.0" />
+                     </font>
+                  </Label>
+                  
+                  <Label fx:id="lblExit" onMouseClicked="#handleExit" styleClass="granny-text-button" text="SAIR" textFill="#ffffff">
+                     <font>
+                        <Font name="Georgia Bold" size="18.0" />
+                     </font>
+                  </Label>
+               </children>
+            </VBox>
+         </children>
+      </VBox>
    </children>
-   <padding>
-      <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-   </padding>
-</VBox>
+</StackPane>
