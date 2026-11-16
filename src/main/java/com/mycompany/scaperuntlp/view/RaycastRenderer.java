@@ -3,11 +3,9 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package com.mycompany.scaperuntlp.view;
-
 /**
  *
  * @author aluno
  */
-public class RaycastRenderer {
-    
+public class RaycastRenderer  {
 }
