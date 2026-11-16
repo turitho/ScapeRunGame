@@ -4,6 +4,11 @@ import com.mycompany.scaperuntlp.model.Jogador;
 import com.mycompany.scaperuntlp.model.MapaJogo;
 import com.mycompany.scaperuntlp.model.ObjetoMapa;
 import com.mycompany.scaperuntlp.model.TipoObjeto;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.StackPane;
@@ -61,6 +66,14 @@ public class JogoView extends StackPane {
         gc.fillRect(0, horizonte, largura, altura - horizonte);
     }
 
+    /**
+     * Desenha uma coluna da visão em primeira pessoa.
+     *
+     * A parede é desenhada primeiro, como fundo. Depois os móveis são
+     * desenhados da maior distância para a menor. Assim, a parte do móvel
+     * que não ocupa altura alguma fica realmente livre para mostrar o cenário
+     * e os objetos que estão atrás dele.
+     */
     private void desenharColuna(int coluna, double largura, double altura,
             double horizonte, Jogador jogador, MapaJogo mapa) {
         double camera = 2.0 * coluna / largura - 1;
@@ -68,46 +81,77 @@ public class JogoView extends StackPane {
                 + Math.atan(camera * Math.tan(CAMPO_VISAO / 2));
         double raioX = Math.cos(anguloRaio);
         double raioY = Math.sin(anguloRaio);
-        double distancia = 0;
-        Color cor = Color.GRAY;
-        ObjetoMapa objetoEncontrado = null;
-        boolean paredeEncontrada = false;
 
-        while (distancia < DISTANCIA_MAXIMA) {
-            distancia += PASSO_RAYCAST;
+        double distanciaParede = DISTANCIA_MAXIMA;
+        boolean paredeEncontrada = false;
+        List<AcertoObjeto> objetosEncontrados = new ArrayList<>();
+        Set<String> celulasVisitadas = new HashSet<>();
+
+        // Percorre o raio até encontrar uma parede ou atingir a distância máxima.
+        for (double distancia = PASSO_RAYCAST;
+                distancia < DISTANCIA_MAXIMA; distancia += PASSO_RAYCAST) {
             double x = jogador.getX() + raioX * distancia;
             double y = jogador.getY() + raioY * distancia;
 
             if (mapa.parede(x, y)) {
-                cor = Color.rgb(115, 118, 125);
+                distanciaParede = distancia;
                 paredeEncontrada = true;
                 break;
             }
 
             ObjetoMapa objeto = mapa.objetoEm(x, y);
-            // Objetos abertos também precisam ser desenhados: não confundir
-            // "não sólido" (permite passagem) com "invisível".
             if (objeto != null) {
-                objetoEncontrado = objeto;
-                cor = corObjeto(objeto);
-                break;
+                String chaveCelula = objeto.getX() + ":" + objeto.getY();
+                if (celulasVisitadas.add(chaveCelula)) {
+                    objetosEncontrados.add(new AcertoObjeto(objeto, distancia));
+                }
             }
         }
 
-        double distanciaCorrigida = Math.max(0.05,
-                distancia * Math.cos(anguloRaio - jogador.getAngulo()));
-        double alturaParede = altura / distanciaCorrigida;
-        double alturaObjeto = objetoEncontrado == null
-                ? alturaParede
-                : alturaParede * objetoEncontrado.getAlturaRelativa();
-        double brilho = Math.max(0.18, Math.min(1,
-                1 / (1 + distanciaCorrigida * 0.10)));
+        // Corrige o efeito de distorção nas laterais da tela.
+        double correcao = Math.cos(anguloRaio - jogador.getAngulo());
+        double distanciaParedeCorrigida = Math.max(0.05, distanciaParede * correcao);
 
-        gc.setFill(cor.deriveColor(0, 1, brilho, 1));
-        double topoObjeto = objetoEncontrado == null
-                ? horizonte - alturaObjeto / 2
-                : horizonte + alturaParede / 2 - alturaObjeto;
-        gc.fillRect(coluna, topoObjeto, 1, alturaObjeto);
+        // O cenário atrás dos móveis é desenhado antes deles.
+        if (paredeEncontrada) {
+            double alturaParede = altura / distanciaParedeCorrigida;
+            double topoParede = horizonte - alturaParede / 2;
+            double brilhoParede = calcularBrilho(distanciaParedeCorrigida);
+            gc.setFill(Color.rgb(115, 118, 125).deriveColor(0, 1, brilhoParede, 1));
+            gc.fillRect(coluna, topoParede, 1, alturaParede);
+        }
+
+        // Desenha primeiro os objetos distantes; os próximos ficam por cima.
+        objetosEncontrados.sort(Comparator.comparingDouble(
+                (AcertoObjeto acerto) -> acerto.distancia).reversed());
+
+        for (AcertoObjeto acerto : objetosEncontrados) {
+            double distanciaCorrigida = Math.max(0.05, acerto.distancia * correcao);
+            double alturaParedeNaDistancia = altura / distanciaCorrigida;
+            double alturaObjeto = alturaParedeNaDistancia
+                    * acerto.objeto.getAlturaRelativa();
+            double baseObjeto = horizonte + alturaParedeNaDistancia / 2;
+            double topoObjeto = baseObjeto - alturaObjeto;
+            double brilho = calcularBrilho(distanciaCorrigida);
+
+            gc.setFill(corObjeto(acerto.objeto).deriveColor(0, 1, brilho, 1));
+            gc.fillRect(coluna, topoObjeto, 1, alturaObjeto);
+        }
+    }
+
+    private double calcularBrilho(double distancia) {
+        return Math.max(0.18, Math.min(1, 1 / (1 + distancia * 0.10)));
+    }
+
+    /** Um móvel atingido pelo raio e a distância aproximada até ele. */
+    private static class AcertoObjeto {
+        private final ObjetoMapa objeto;
+        private final double distancia;
+
+        private AcertoObjeto(ObjetoMapa objeto, double distancia) {
+            this.objeto = objeto;
+            this.distancia = distancia;
+        }
     }
 
     private void desenharHud(double largura, double horizonte) {
