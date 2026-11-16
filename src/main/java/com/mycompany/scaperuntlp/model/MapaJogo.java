@@ -21,6 +21,9 @@ public class MapaJogo  {
         adicionar(TipoObjeto.ARMARIO,16,20);
         adicionar(TipoObjeto.ARMARIO,27,22);
         adicionar(TipoObjeto.ARMARIO,35,8);
+        adicionar(TipoObjeto.CAMA,12,5);
+        adicionar(TipoObjeto.CAMA,31,27);
+        adicionar(TipoObjeto.CAMA,5,32);
     }
     private void adicionar(TipoObjeto t,int x,int y) {
         objetos.add(new ObjetoMapa(t,x,y));
