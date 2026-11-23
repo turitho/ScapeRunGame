@@ -1,45 +1,18 @@
-# Altura personalizada dos objetos
+# Tamanhos dos móveis
 
-A alteração foi aplicada sobre o `ScapeRunGame.zip` enviado nesta conversa.
+As medidas padrão estão em `model/TipoObjeto.java`, e o mapa pode personalizá-las ao adicionar cada objeto em `model/MapaJogo.java`.
 
-## Como a altura funciona
-
-A altura é relativa à altura de uma parede:
-
-- `0.25`: 25% da altura de uma parede.
-- `0.50`: metade da altura de uma parede.
-- `1.00`: mesma altura de uma parede.
-- `1.20`: 20% mais alto que uma parede.
-
-O intervalo permitido é de `0.05` até `2.00`.
-
-## Definir a altura ao criar o objeto
+A câmera está a **0.64 unidade** do piso; paredes têm altura **1.00**. Mesas têm cerca de **0.32**, camas **0.22**, estantes **0.74** e armários **0.84** unidade. A cabeceira da cama ultrapassa levemente a altura principal.
 
 ```java
-MapaJogo mapa = new MapaJogo();
-mapa.adicionar(TipoObjeto.MESA, 9, 7, 0.55);
-mapa.adicionar(TipoObjeto.ESTANTE, 10, 7, 1.20);
-mapa.adicionar(TipoObjeto.CAMA, 11, 7, 0.30);
+// Inserir móvel no mapa (em uma posição livre):
+mapa.adicionar(TipoObjeto.MESA, 9, 7, 0.32, 0);
+
+// Alterar individualmente um móvel existente:
+ObjetoMapa mesa = mapa.objetoEm(6, 6);
+mesa.setAlturaRelativa(0.36);
+mesa.setDimensoes(0.90, 0.68);
+mesa.setRotacao(90);
 ```
 
-## Alterar a altura de um objeto que já existe
-
-```java
-ObjetoMapa mesa = mapa.objetoEm(9, 7);
-
-if (mesa != null) {
-    mesa.setAlturaRelativa(0.75);
-}
-```
-
-A `JogoView` já consulta `getAlturaRelativa()` durante o desenho de cada frame.
-Portanto, ao alterar a altura no Model, a próxima renderização usa o novo valor.
-
-## Onde cada responsabilidade fica no MVC
-
-- **Model — `ObjetoMapa`:** armazena e valida a altura individual.
-- **Model — `TipoObjeto`:** define a altura padrão de cada tipo.
-- **Model — `MapaJogo`:** oferece métodos para adicionar objetos com altura padrão ou personalizada.
-- **View — `JogoView`:** converte a altura relativa em altura de pixels na projeção 3D.
-
-A altura visual não altera a colisão: o objeto continua ocupando a célula inteira do mapa.
+`setAlturaRelativa`, `setDimensoes` e `setRotacao` continuam funcionando. A colisão usa largura e profundidade. O desenho usa também a altura e as superfícies superior/inferior. **Alterações de dimensão em tempo de execução não refazem automaticamente a validação das posições de outros móveis próximos**, então configure as dimensões de cada móvel respeitando o espaço livre no mapa.

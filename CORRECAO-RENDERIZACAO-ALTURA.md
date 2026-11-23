@@ -1,24 +1,11 @@
-# Correção da renderização da altura dos objetos
+# Correção de buracos e oclusão na renderização
 
-## Problema
+A implementação atual de `JogoView` usa DDA para encontrar paredes e calcula interseções de cada raio com as **caixas 3D** que compõem mesas, estantes, camas e armários.
 
-Antes, cada raio parava no primeiro móvel encontrado. A View desenhava somente esse móvel e não continuava o desenho do cenário atrás dele. Por isso, a área acima de um móvel baixo parecia opaca, em vez de revelar o que estava atrás.
+A versão anterior calculava somente uma distância horizontal para cada caixa e desenhava um retângulo vertical, sem renderizar as tampas e as bases dos móveis. Isso provocava superfícies vazadas e sobreposições incorretas, principalmente perto da câmera.
 
-## Solução
+Agora cada pixel da coluna possui uma profundidade armazenada em `profundidades[]`. A interseção analítica testa tanto a entrada e saída no plano XY quanto o intervalo entre `zMin` e `zMax`: se a interseção vertical acontecer depois da horizontal, a superfície visível é o topo ou a base da caixa. A cor do pixel somente é substituída quando o novo ponto de interseção está **mais próximo** que o que já foi desenhado.
 
-A classe `view/JogoView.java` foi ajustada para:
+Não é necessária uma textura transparente para mostrar o fundo: apenas as superfícies fisicamente presentes são rasterizadas. O vão sob mesas e entre prateleiras é intencional, mas o tampo e as caixas sólidas não ficam mais com buracos falsos.
 
-1. Percorrer o raio até a parede, registrando os móveis encontrados no caminho.
-2. Desenhar a parede como fundo da coluna.
-3. Desenhar os móveis do mais distante para o mais próximo.
-4. Limitar cada móvel à sua altura projetada (`getAlturaRelativa()`).
-
-Assim, a parte que não é ocupada pelo móvel não recebe uma cor opaca do próprio móvel: ela mantém visível o cenário ou outro objeto que esteja atrás.
-
-## Onde alterar
-
-A lógica está no método `desenharColuna(...)` de `JogoView.java`. A altura de cada tipo continua sendo definida em `model/TipoObjeto.java` e consultada por `ObjetoMapa.getAlturaRelativa()`.
-
-## Observação
-
-A colisão continua sendo baseada na célula ocupada pelo móvel. Esta alteração afeta somente a renderização visual, não a área de colisão.
+**Limite:** continua sendo um raycaster de caixas ortogonais com rotações de 90°, e não um motor 3D genérico com malhas e sombras dinâmicas.
