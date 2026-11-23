@@ -1,0 +1,1 @@
+JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 /usr/lib/apache-netbeans/java/maven/bin/mvn clean javafx:run

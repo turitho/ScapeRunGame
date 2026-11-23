@@ -7,11 +7,14 @@ import com.mycompany.scaperuntlp.model.MapaJogo;
 import com.mycompany.scaperuntlp.model.ObjetoMapa;
 import com.mycompany.scaperuntlp.model.TipoObjeto;
 
+import javafx.scene.image.Image;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+
+import java.net.URL;
 
 public class JogoView extends StackPane {
 
@@ -22,10 +25,25 @@ public class JogoView extends StackPane {
     private static final double DISTANCIA_MAXIMA = 35;
     private static final double PASSO_RAYCAST = 0.025;
 
+    private final Image imagemInimigo;
+
     private final Canvas canvas = new Canvas(LARGURA_TELA, ALTURA_TELA);
     private final GraphicsContext gc = canvas.getGraphicsContext2D();
 
     public JogoView() {
+
+        URL recurso = getClass().getResource(
+    "/com/mycompany/scaperuntlp/imagens/inimigo.png"
+);
+
+        if (recurso == null) {
+            throw new IllegalStateException(
+                    "Imagem não encontrada: /imagens/inimigo.png"
+            );
+        }
+
+        imagemInimigo = new Image(recurso.toExternalForm());
+
         getChildren().add(canvas);
         setStyle("-fx-background-color: black;");
     }
@@ -51,10 +69,18 @@ public class JogoView extends StackPane {
                     altura,
                     horizonte,
                     jogador,
-                    mapa,
-                    inimigo
+                    mapa
             );
         }
+
+        desenharInimigo(
+                largura,
+                altura,
+                horizonte,
+                jogador,
+                inimigo,
+                mapa
+        );
 
         desenharHud(largura, horizonte, inimigo);
     }
@@ -90,8 +116,7 @@ public class JogoView extends StackPane {
             double altura,
             double horizonte,
             Jogador jogador,
-            MapaJogo mapa,
-            Inimigo inimigo) {
+            MapaJogo mapa) {
 
         double camera = 2.0 * coluna / largura - 1;
 
@@ -150,26 +175,15 @@ public class JogoView extends StackPane {
                 : horizonte + alturaParede / 2 - alturaObjeto;
 
         gc.fillRect(coluna, topoObjeto, 1, alturaObjeto);
-
-        desenharInimigo(
-                coluna,
-                altura,
-                horizonte,
-                jogador,
-                inimigo,
-                anguloRaio,
-                distanciaCorrigida
-        );
     }
 
     private void desenharInimigo(
-            int coluna,
+            double largura,
             double altura,
             double horizonte,
             Jogador jogador,
             Inimigo inimigo,
-            double anguloRaio,
-            double distanciaParede) {
+            MapaJogo mapa) {
 
         double dx = inimigo.getX() - jogador.getX();
         double dy = inimigo.getY() - jogador.getY();
@@ -181,8 +195,7 @@ public class JogoView extends StackPane {
         }
 
         double anguloInimigo = Math.atan2(dy, dx);
-
-        double diferenca = anguloInimigo - anguloRaio;
+        double diferenca = anguloInimigo - jogador.getAngulo();
 
         while (diferenca > Math.PI) {
             diferenca -= Math.PI * 2;
@@ -192,41 +205,64 @@ public class JogoView extends StackPane {
             diferenca += Math.PI * 2;
         }
 
+        if (Math.abs(diferenca) > CAMPO_VISAO / 2) {
+            return;
+        }
+
         double profundidade = distancia * Math.cos(diferenca);
 
-        if (profundidade <= 0 || profundidade >= distanciaParede) {
+        if (profundidade <= 0) {
             return;
         }
 
-        double larguraAngular = Math.atan(0.35 / profundidade);
+        // Verifica se existe parede entre o jogador e o inimigo.
+        double passo = 0.05;
 
-        if (Math.abs(diferenca) > larguraAngular) {
-            return;
+        for (double d = passo; d < distancia; d += passo) {
+
+            double x = jogador.getX()
+                    + Math.cos(anguloInimigo) * d;
+
+            double y = jogador.getY()
+                    + Math.sin(anguloInimigo) * d;
+
+            if (mapa.parede(x, y)) {
+                return;
+            }
         }
+
+        // Projeta a posição do inimigo na tela.
+        double posicaoTela = largura / 2
+                * (1 + Math.tan(diferenca)
+                / Math.tan(CAMPO_VISAO / 2));
 
         double alturaInimigo = altura * 0.85 / profundidade;
+        double larguraInimigo = alturaInimigo
+                * imagemInimigo.getWidth()
+                / imagemInimigo.getHeight();
 
-        double base = horizonte + altura / (2 * profundidade);
+        double topo = horizonte - alturaInimigo / 2;
+        double esquerda = posicaoTela - larguraInimigo / 2;
 
-        double topo = base - alturaInimigo;
-
+        // Escurece a imagem conforme a distância.
         double brilho = Math.max(
                 0.25,
                 Math.min(1, 1 / (1 + profundidade * 0.10))
         );
 
-        Color cor = inimigo.getEstado() == Inimigo.Estado.PERSEGUINDO
-                ? Color.RED
-                : Color.CRIMSON;
+        gc.save();
 
-        gc.setFill(cor.deriveColor(0, 1, brilho, 1));
+        gc.setGlobalAlpha(brilho);
 
-        gc.fillRect(
-                coluna,
+        gc.drawImage(
+                imagemInimigo,
+                esquerda,
                 topo,
-                1,
+                larguraInimigo,
                 alturaInimigo
         );
+
+        gc.restore();
     }
 
     private void desenharHud(
@@ -255,9 +291,11 @@ public class JogoView extends StackPane {
         gc.setFill(Color.WHITE);
         gc.setFont(Font.font("Arial", 13));
 
-        String estado = inimigo.getEstado().toString();
-
-        gc.fillText("NPC: " + estado, 18, 52);
+        gc.fillText(
+                "NPC: " + inimigo.getEstado(),
+                18,
+                52
+        );
     }
 
     private Color corObjeto(ObjetoMapa objeto) {
